@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Интерактивный тест из .qst файла</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  
+  :root { 
+    --bg: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+    --card-bg: rgba(255, 255, 255, 0.05);
+    --card-border: rgba(255, 255, 255, 0.1);
+    --fg: #ffffff;
+    --muted: #94a3b8;
+    --accent: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --accent-hover: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    --ok: #10b981;
+    --bad: #f43f5e;
+    --warning: #f59e0b;
+    --glass: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  }
+  
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    min-height: 100vh;
+    overflow-x: hidden;
+    padding-bottom: 140px;
+  }
+  
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 40% 80%, rgba(119, 255, 198, 0.2) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+  }
+  
+  header {
+    position: sticky;
+    top: 0;
+    background: rgba(15, 15, 35, 0.8);
+    backdrop-filter: blur(20px) saturate(150%);
+    z-index: 100;
+    border-bottom: 1px solid var(--glass-border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  .wrap {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  h1 {
+    font-size: clamp(20px, 5vw, 28px);
+    font-weight: 700;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-align: center;
+  }
+  
+  .controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  button, .btn {
+    appearance: none;
+    border: 1px solid var(--glass-border);
+    background: var(--glass);
+    color: var(--fg);
+    padding: 16px 20px;
+    border-radius: 16px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s;
+  }
+  
+  button:hover::before {
+    left: 100%;
+  }
+  
+  button:hover {
+    border-color: var(--glass-border);
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  }
+  
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .file {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 20px;
+    border: 2px dashed var(--glass-border);
+    border-radius: 16px;
+    cursor: pointer;
+    background: var(--glass);
+    transition: all 0.3s ease;
+    font-weight: 600;
+    font-size: 16px;
+    min-height: 48px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .file:hover {
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+  }
+  
+  .file::before {
+    content: '📁';
+    font-size: 18px;
+  }
+  
+  input[type="file"] {
+    display: none;
+  }
+  
+  .card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 24px 20px;
+    margin: 16px 0;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  }
+  
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  }
+  
+  .qtext {
+    white-space: pre-wrap;
+    font-size: clamp(18px, 4vw, 20px);
+    line-height: 1.6;
+    margin-bottom: 20px;
+    font-weight: 500;
+    text-align: left;
+  }
+  
+  .answers {
+    display: grid;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  
+  .ans {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 18px 20px;
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    min-height: 60px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .ans::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .ans:hover::before {
+    opacity: 1;
+  }
+  
+  .ans:hover {
+    border-color: var(--glass-border);
+    transform: scale(1.02);
+    background: rgba(255, 255, 255, 0.08);
+  }
+  
+  .ans.disabled {
+    cursor: default;
+    opacity: 0.8;
+  }
+  
+  .ans.disabled:hover {
+    transform: none;
+  }
+  
+  .ans input {
+    margin-top: 2px;
+    transform: scale(1.5);
+    accent-color: #667eea;
+    min-width: 20px;
+    min-height: 20px;
+  }
+  
+  .ans-text {
+    flex: 1;
+    font-size: clamp(15px, 3.5vw, 16px);
+    line-height: 1.5;
+  }
+  
+  .check-btn {
+    background: var(--accent);
+    border: none;
+    color: white;
+    margin-top: 20px;
+    padding: 18px 32px;
+    font-size: 18px;
+    font-weight: 600;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s ease;
+    min-height: 56px;
+    width: 100%;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .check-btn:hover:not(:disabled) {
+    background: var(--accent-hover);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+  }
+  
+  .muted { color: var(--muted); }
+  .ok { color: var(--ok); }
+  .bad { color: var(--bad); }
+  
+  .row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  
+  .grow { flex: 1; }
+  
+  .progress {
+    height: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(10px);
+  }
+  
+  .bar {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+  
+  .bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  
+  .pill {
+    border: 1px solid var(--card-border);
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+  }
+  
+  .sticky-bottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(15, 15, 35, 0.95);
+    backdrop-filter: blur(20px) saturate(150%);
+    z-index: 100;
+    border-top: 1px solid var(--glass-border);
+    padding: 16px 0 20px 0;
+    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  .result-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    border-radius: 24px;
+    padding: 32px;
+    margin: 24px 0;
+    box-shadow: var(--shadow);
+  }
+  
+  .result-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  
+  .result-score {
+    font-size: 48px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  
+  .result-percentage {
+    font-size: 24px;
+    font-weight: 600;
+    opacity: 0.8;
+  }
+  
+  .question-review {
+    padding: 20px 24px;
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    margin-bottom: 16px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+  
+  .question-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .status-correct {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--ok);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+  
+  .status-incorrect {
+    background: rgba(244, 63, 94, 0.2);
+    color: var(--bad);
+    border: 1px solid rgba(244, 63, 94, 0.3);
+  }
+  
+  .status-unanswered {
+    background: rgba(156, 163, 175, 0.2);
+    color: var(--muted);
+    border: 1px solid rgba(156, 163, 175, 0.3);
+  }
+  
+  .answer-list {
+    list-style: none;
+    margin: 16px 0 0 0;
+    padding: 0;
+  }
+  
+  .answer-item {
+    padding: 12px 16px;
+    margin: 8px 0;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+  }
+  
+  .answer-item.correct {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+  
+  .answer-item.incorrect {
+    background: rgba(244, 63, 94, 0.1);
+    border-color: rgba(244, 63, 94, 0.3);
+  }
+  
+  .meta-info {
+    font-size: 14px;
+    opacity: 0.7;
+    margin-top: 16px;
+    text-align: center;
+  }
+  
+    @media (max-width: 768px) {
+    body {
+      padding-bottom: 160px;
+    }
+    
+    .wrap { 
+      padding: 16px 12px; 
+    }
+    
+    .card { 
+      padding: 20px 16px; 
+      margin: 12px 0;
+      border-radius: 16px;
+    }
+    
+    .controls {
+      flex-direction: column;
+      width: 100%;
+      gap: 12px;
+    }
+    
+    .controls > * {
+      width: 100%;
+      max-width: none;
+    }
+    
+    .file, button {
+      padding: 20px;
+      font-size: 16px;
+      min-height: 56px;
+    }
+    
+    .row { 
+      flex-direction: column; 
+      align-items: stretch;
+      gap: 12px;
+    }
+    
+    .row.nav-row {
+      flex-direction: row;
+      gap: 8px;
+    }
+    
+    .nav-row button {
+      flex: 1;
+      padding: 16px 12px;
+      font-size: 15px;
+    }
+    
+    .progress {
+      order: -1;
+      margin-bottom: 8px;
+      height: 8px;
+    }
+    
+    .pill {
+      text-align: center;
+      order: -1;
+      margin-bottom: 8px;
+      padding: 8px 12px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .result-score { 
+      font-size: 36px; 
+    }
+    
+    .result-percentage { 
+      font-size: 18px; 
+    }
+    
+    .question-review {
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    
+    .answer-item {
+      padding: 14px 16px;
+      font-size: 15px;
+    }
+    
+    .meta-info {
+      font-size: 15px;
+      margin-top: 12px;
+    }
+    
+    .sticky-bottom {
+      padding: 20px 0 24px 0;
+    }
+    
+    .empty-state {
+      padding: 40px 20px;
+    }
+    
+    .empty-state-icon {
+      font-size: 48px;
+    }
+    
+    .empty-state h2 {
+      font-size: 20px;
+    }
+    
+    .empty-state p {
+      font-size: 15px;
+    }
+  }
+  
+  .loading-animation {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #667eea;
+    animation: spin 1s ease-in-out infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 60px 40px;
+    color: var(--muted);
+  }
+  
+  .empty-state-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+  
+  .empty-state h2 {
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: var(--fg);
+  }
+  
+  .empty-state p {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>🧠 Интерактивный тест</h1>
+      <div class="controls">
+        <label class="file">
+          <input id="fileInput" type="file" accept=".qst,.txt,text/plain,*">
+          <span>Загрузить .qst файл</span>
+        </label>
+        <button id="shuffleBtn">🔀 Перемешать</button>
+        <span id="countInfo" class="muted"></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="quizZone">
+      <div class="card empty-state">
+        <div class="empty-state-icon">📝</div>
+        <h2>Добро пожаловать!</h2>
+        <p>Загрузите .qst файл, чтобы начать интерактивное тестирование.<br>Поддерживаются файлы в формате UTF-8 и Windows-1251.</p>
+      </div>
+    </div>
+    <div id="resultZone" style="display:none"></div>
+  </main>
+
+  <div class="sticky-bottom">
+    <div class="wrap">
+      <div class="row">
+        <div class="grow progress"><div id="progressBar" class="bar"></div></div>
+        <div id="statusPill" class="pill">0/0</div>
+      </div>
+      <div class="row nav-row">
+        <button id="prevBtn" disabled>⬅️ Назад</button>
+        <button id="nextBtn" disabled>Далее ➡️</button>
+        <button id="finishBtn" disabled>✅ Завершить</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+"use strict";
+
+const state = {
+  questions: [],
+  current: 0,
+  answers: [],
+  checked: [],
+};
+
+const fileInput = document.getElementById("fileInput");
+const shuffleBtn = document.getElementById("shuffleBtn");
+const countInfo = document.getElementById("countInfo");
+const quizZone = document.getElementById("quizZone");
+const resultZone = document.getElementById("resultZone");
+const progressBar = document.getElementById("progressBar");
+const statusPill = document.getElementById("statusPill");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+const finishBtn = document.getElementById("finishBtn");
+
+function shuffleInPlace(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function parseQST(text) {
+  const questions = [];
+  const blocks = text.split('?').map(b => b.trim()).filter(Boolean);
+
+  blocks.forEach(block => {
+    const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length < 2) return;
+
+    const answerLines = lines.filter(l => l.startsWith('+') || l.startsWith('-'));
+    const questionLines = lines.filter(l => !l.startsWith('+') && !l.startsWith('-'));
+
+    if (questionLines.length === 1 && answerLines.length > 0) {
+      const q = {
+        q: questionLines[0],
+        options: []
+      };
+
+      answerLines.forEach(line => {
+        const correct = line.startsWith('+');
+        const optionText = line.replace(/^[+-]/, '').trim();
+        if (optionText) {
+          q.options.push({ text: optionText, correct });
+        }
+      });
+
+      if (q.options.length > 1) {
+        questions.push(q);
+      }
+    }
+  });
+  return questions;
+}
+
+function renderQuestion(q, index, total) {
+  quizZone.innerHTML = "";
+  const card = document.createElement("div");
+  card.className = "card";
+  
+  const qtext = document.createElement("div");
+  qtext.className = "qtext";
+  qtext.textContent = q.q;
+  card.appendChild(qtext);
+
+  const answers = document.createElement("div");
+  answers.className = "answers";
+
+  const isMultiple = q.options.filter(o => o.correct).length > 1;
+  const inputType = isMultiple ? "checkbox" : "radio";
+
+  const checkBtn = document.createElement("button");
+  checkBtn.textContent = "✓ Проверить ответ";
+  checkBtn.className = "check-btn";
+  checkBtn.disabled = true;
+
+  q.options.forEach((o, i) => {
+    const row = document.createElement("label");
+    row.className = "ans";
+    const input = document.createElement("input");
+    input.type = inputType;
+    input.name = "q" + index;
+    input.dataset.correct = o.correct ? "1" : "0";
+    input.dataset.idx = i;
+    if (state.answers[index] && state.answers[index].includes(i)) {
+      input.checked = true;
+    }
+    const span = document.createElement("div");
+    span.className = "ans-text";
+    span.textContent = o.text;
+    row.appendChild(input);
+    row.appendChild(span);
+    answers.appendChild(row);
+
+    input.addEventListener("change", () => {
+      saveAnswer(state.current);
+      updateProgress();
+      checkBtn.disabled = !answers.querySelector('input:checked');
+    });
+  });
+  card.appendChild(answers);
+
+  checkBtn.addEventListener("click", () => {
+    state.checked[index] = true;
+    checkAndMark(answers);
+    checkBtn.disabled = true;
+    checkBtn.textContent = "✓ Ответ проверен";
+    answers.querySelectorAll("input").forEach(inp => inp.disabled = true);
+    answers.querySelectorAll(".ans").forEach(label => label.classList.add("disabled"));
+  });
+
+  const meta = document.createElement("div");
+  meta.className = "meta-info";
+  meta.textContent = `Вопрос ${index + 1} из ${total}`;
+  if (isMultiple) {
+    meta.textContent += " • Множественный выбор";
+  }
+  
+  card.appendChild(checkBtn);
+  card.appendChild(meta);
+  quizZone.appendChild(card);
+  
+  if (state.answers[index] && state.answers[index].length > 0 && !state.checked[index]) {
+    checkBtn.disabled = false;
+  }
+  if (state.checked[index]) {
+    checkAndMark(answers);
+    checkBtn.disabled = true;
+    checkBtn.textContent = "✓ Ответ проверен";
+    answers.querySelectorAll("input").forEach(inp => inp.disabled = true);
+    answers.querySelectorAll(".ans").forEach(label => label.classList.add("disabled"));
+  }
+}
+
+function checkAndMark(answersEl) {
+  answersEl.querySelectorAll(".ans").forEach((row) => {
+    const inp = row.querySelector("input");
+    const isCorrect = inp.dataset.correct === "1";
+    const isSelected = inp.checked;
+
+    if (isSelected && !isCorrect) {
+      row.style.outline = "2px solid var(--bad)";
+      row.style.background = "rgba(244, 63, 94, 0.1)";
+    } else if (isCorrect) {
+      row.style.outline = "2px solid var(--ok)";
+      row.style.background = "rgba(16, 185, 129, 0.1)";
+    }
+  });
+}
+
+function saveAnswer(index) {
+  const sel = [];
+  document.querySelectorAll(`input[name="q${index}"]`).forEach((inp) => {
+    if (inp.checked) sel.push(Number(inp.dataset.idx));
+  });
+  state.answers[index] = sel;
+}
+
+function scoreAll() {
+  let correct = 0;
+  const total = state.questions.length;
+  const details = [];
+  state.questions.forEach((q, qi) => {
+    const sel = state.answers[qi] || [];
+    if (sel.length > 0) {
+        const truth = q.options.map(o => o.correct);
+        const mark = Array(q.options.length).fill(false);
+        sel.forEach(i => mark[i] = true);
+        const ok = truth.length === mark.length && truth.every((t, i) => t === mark[i]);
+        if (ok) correct++;
+        details.push({ qi, ok, q, sel });
+    } else {
+        details.push({ qi, ok: false, q, sel });
+    }
+  });
+  return { correct, total, details };
+}
+
+function updateProgress() {
+  const total = state.questions.length;
+  if (total === 0) return;
+  const answered = state.answers.filter(a => Array.isArray(a) && a.length > 0).length;
+  const percent = total ? Math.round(100 * answered / total) : 0;
+  progressBar.style.width = percent + "%";
+  statusPill.textContent = `${answered}/${total}`;
+}
+
+function updateNavButtons() {
+    prevBtn.disabled = state.current <= 0;
+    nextBtn.disabled = state.current >= state.questions.length - 1;
+}
+
+function render() {
+  const total = state.questions.length;
+  if (total === 0) {
+    quizZone.innerHTML = `
+      <div class="card empty-state">
+        <div class="empty-state-icon">📝</div>
+        <h2>Добро пожаловать!</h2>
+        <p>Загрузите .qst файл, чтобы начать интерактивное тестирование.<br>Поддерживаются файлы в формате UTF-8 и Windows-1251.</p>
+      </div>
+    `;
+    countInfo.textContent = "";
+    [prevBtn, nextBtn, finishBtn, shuffleBtn].forEach(b=>b.disabled=true);
+    return;
+  }
+  [prevBtn, nextBtn, finishBtn, shuffleBtn].forEach(b=>b.disabled=false);
+  resultZone.style.display = 'none';
+  renderQuestion(state.questions[state.current], state.current, total);
+  countInfo.textContent = `📊 ${total} вопросов`;
+  updateProgress();
+  updateNavButtons();
+}
+
+function startQuiz(text) {
+  const qs = parseQST(text);
+  if (qs.length === 0) {
+    alert("Вопросы не найдены. Пожалуйста, проверьте формат файла.");
+    return;
+  }
+  state.questions = qs;
+  state.current = 0;
+  state.answers = Array(qs.length).fill(null);
+  state.checked = Array(qs.length).fill(false);
+  state.questions.forEach(q => shuffleInPlace(q.options));
+  render();
+}
+
+shuffleBtn.addEventListener("click", () => {
+  if (state.questions.length === 0) return;
+  shuffleInPlace(state.questions).forEach(q => shuffleInPlace(q.options));
+  state.current = 0;
+  state.answers = Array(state.questions.length).fill(null);
+  state.checked = Array(state.questions.length).fill(false);
+  resultZone.style.display = 'none';
+  render();
+});
+
+prevBtn.addEventListener("click", () => {
+  if (state.current > 0) {
+    saveAnswer(state.current);
+    state.current--;
+    render();
+  }
+});
+
+nextBtn.addEventListener("click", () => {
+  if (state.current < state.questions.length - 1) {
+    saveAnswer(state.current);
+    state.current++;
+    render();
+  }
+});
+
+finishBtn.addEventListener("click", () => {
+  saveAnswer(state.current);
+  const { correct, total, details } = scoreAll();
+  const percentage = Math.round((correct / total) * 100);
+  
+  resultZone.style.display = "block";
+  resultZone.innerHTML = `
+    <div class="result-card">
+      <div class="result-header">
+        <div class="result-score ${correct === total ? 'ok' : correct / total >= 0.7 ? 'warning' : 'bad'}">
+          ${correct}/${total}
+        </div>
+        <div class="result-percentage">
+          ${percentage}% правильных ответов
+        </div>
+      </div>
+    </div>
+  `;
+
+  const reviewCard = document.createElement("div");
+  reviewCard.className = "result-card";
+  reviewCard.innerHTML = "<h3 style='margin-bottom: 24px; font-size: 20px;'>📋 Подробный разбор</h3>";
+
+  details.forEach(d => {
+    const item = document.createElement("div");
+    item.className = "question-review";
+    
+    const header = document.createElement("div");
+    header.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;";
+    
+    const questionNum = document.createElement("span");
+    questionNum.textContent = `Вопрос ${d.qi + 1}`;
+    questionNum.style.fontWeight = "600";
+    
+    const status = document.createElement("span");
+    if (d.sel.length === 0) {
+        status.className = "question-status status-unanswered";
+        status.innerHTML = "⭕ Не решено";
+    } else {
+        status.className = d.ok ? "question-status status-correct" : "question-status status-incorrect";
+        status.innerHTML = d.ok ? "✅ Верно" : "❌ Ошибка";
+    }
+    
+    header.appendChild(questionNum);
+    header.appendChild(status);
+    item.appendChild(header);
+
+    const qtext = document.createElement("div");
+    qtext.style.cssText = "white-space: pre-wrap; margin: 16px 0; font-weight: 500; font-size: 16px;";
+    qtext.textContent = d.q.q;
+    item.appendChild(qtext);
+    
+    const list = document.createElement("ul");
+    list.className = "answer-list";
+    
+    d.q.options.forEach((o, i) => {
+      const li = document.createElement("li");
+      li.className = "answer-item";
+      const picked = d.sel.includes(i);
+      const isCorrect = o.correct;
+      
+      let prefix = picked ? "☑️ " : "☐ ";
+      let classes = [];
+      
+      if (picked && !isCorrect) {
+        classes.push("incorrect");
+        li.classList.add("incorrect");
+      }
+      if (picked && isCorrect) {
+        classes.push("correct");
+        li.classList.add("correct");
+      }
+      if (!picked && isCorrect) {
+        li.style.opacity = "0.7";
+        prefix = "✅ ";
+      }
+
+      li.innerHTML = `${prefix}${o.text}`;
+      list.appendChild(li);
+    });
+    
+    item.appendChild(list);
+    reviewCard.appendChild(item);
+  });
+  
+  resultZone.appendChild(reviewCard);
+  resultZone.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+fileInput.addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const label = fileInput.nextElementSibling;
+  const originalText = label.textContent;
+  label.innerHTML = '<div class="loading-animation"></div> Загрузка...';
+
+  const buf = await file.arrayBuffer();
+  let text;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(buf);
+  } catch (err) {
+    try {
+      text = new TextDecoder("windows-1251").decode(buf);
+    } catch (err2) {
+      alert("Не удалось прочитать файл. Попробуйте кодировку UTF-8 или Windows-1251.");
+      label.textContent = originalText;
+      return;
+    }
+  }
+  startQuiz(text);
+  label.textContent = originalText;
+  fileInput.value = '';
+});
+
+// Init
+render();
+
+</script>
+</body>
+</html>
